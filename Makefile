@@ -11,5 +11,4 @@ chart:
 	cr index --package-path $(PKG_PATH) --index-path $(PKG_PATH) \
 		--owner codekoala \
 		--git-repo k8s-pvc-usage \
-		--packages-with-index \
-		--push
+		--packages-with-index
