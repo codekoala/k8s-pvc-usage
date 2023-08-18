@@ -95,6 +95,9 @@ func GetPvcUsageCtx(ctx context.Context, api *Client) (stats []PvcStats) {
 func GetNodePvcUsageCtx(ctx context.Context, api *Client, node Node) (stats []PvcStats) {
 	var pods NodePodsList
 
+	log.Debug().
+		Str("node", node.Metadata.Name).
+		Msg("scraping PVC stats for node")
 	resp := api.Req(ctx, "nodes", node.Metadata.Name, "proxy", "stats", "summary").
 		Send().Scan(&pods)
 	if err := resp.Error(); err != nil {

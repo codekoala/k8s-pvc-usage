@@ -4,5 +4,5 @@ metadata:
   name: '{{ include "k8s-pvc-usage.serviceAccountName" . }}'
 rules:
   - apiGroups: [""]
-    resources: ["nodes"]
+    resources: ["nodes", "nodes/proxy"]
     verbs: ["get", "watch", "list"]
