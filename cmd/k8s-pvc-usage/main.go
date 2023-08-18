@@ -78,14 +78,21 @@ func main() {
 }
 
 func scrapeUsage(ctx context.Context, api *pvcusage.Client) {
+	var counter uint
+
 	ticker := time.NewTicker(ScrapeInterval)
 	defer ticker.Stop()
 
 	for {
+		log.Debug().Msg("scraping stats")
+		counter = 0
+
 		for _, pvc := range pvcusage.GetPvcUsageCtx(ctx, api) {
 			pvcUsage.WithLabelValues(pvc.Name, pvc.Namespace).Set(pvc.Usage())
+			counter++
 		}
 
+		log.Info().Uint("count", counter).Msg("scraped metrics for PVCs")
 		select {
 		case <-ctx.Done():
 			log.Info().Msg("exiting scrape loop")

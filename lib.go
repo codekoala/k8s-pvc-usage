@@ -3,6 +3,8 @@ package pvcusage
 import (
 	"context"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -69,12 +71,17 @@ func GetNodePvcUsage(api *Client, node Node) []PvcStats {
 }
 
 func GetNodesCtx(ctx context.Context, api *Client) []Node {
-	var resp NodeList
+	var nodes NodeList
 
-	api.Req(ctx, "nodes").
-		Send().Scan(&resp)
+	resp := api.Req(ctx, "nodes").
+		Send().Scan(&nodes)
+	if err := resp.Error(); err != nil {
+		log.Error().
+			Err(err).
+			Msg("error listing nodes")
+	}
 
-	return resp.Items
+	return nodes.Items
 }
 
 func GetPvcUsageCtx(ctx context.Context, api *Client) (stats []PvcStats) {
@@ -88,8 +95,16 @@ func GetPvcUsageCtx(ctx context.Context, api *Client) (stats []PvcStats) {
 func GetNodePvcUsageCtx(ctx context.Context, api *Client, node Node) (stats []PvcStats) {
 	var pods NodePodsList
 
-	api.Req(ctx, "nodes", node.Metadata.Name, "proxy", "stats", "summary").
+	resp := api.Req(ctx, "nodes", node.Metadata.Name, "proxy", "stats", "summary").
 		Send().Scan(&pods)
+	if err := resp.Error(); err != nil {
+		log.Error().
+			Err(err).
+			Str("node", node.Metadata.Name).
+			Msg("error getting node stats")
+		return
+	}
+
 	for _, pod := range pods.Pods {
 		for _, vol := range pod.Volumes {
 			if vol.PvcRef == nil || vol.CapacityBytes <= 0 {
