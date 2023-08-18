@@ -1,0 +1,37 @@
+project_name: k8s-pvc-usage
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+builds:
+  - id: k8s-pvc-usage
+    main: ./cmd/k8s-pvc-usage
+    no_unique_dist_dir: true
+    ldflags:
+      - -X "main.version={{ .Version }}"
+      - -X "main.branch={{ .Branch }}"
+      - -X "main.commit={{ .ShortCommit }}"
+      - -X "main.date={{ .Date }}"
+      - -s
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+      # - -buildmode=pie
+    goos:
+      - linux
+    goarch:
+      - amd64
+    hooks:
+      post:
+        - upx {{ .Path }}
+archives:
+  - format: binary
+snapshot:
+  name_template: "{{ incpatch .Version }}.99"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
