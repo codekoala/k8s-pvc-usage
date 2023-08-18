@@ -3,7 +3,17 @@ entries:
   k8s-pvc-usage:
   - apiVersion: v2
     appVersion: 0.1.0
-    created: "2023-08-18T11:47:01.400107713-04:00"
+    created: "2023-08-18T11:53:06.985265746-04:00"
+    description: A barebones prometheus exporter for PVC usage metrics scraper
+    digest: 2c6e1fd0cc3a619a288d0039abbd6d106020ba49ed071c19b99da552d427516a
+    name: k8s-pvc-usage
+    type: application
+    urls:
+    - k8s-pvc-usage-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 0.1.0
+    created: "2023-08-18T11:53:06.904071555-04:00"
     description: A barebones prometheus exporter for PVC usage metrics scraper
     digest: 8f29f3a0dffca680d0c5be215943bbe8ebed98a17fbae2c747a5fb21a5bea4f7
     name: k8s-pvc-usage
@@ -11,4 +21,4 @@ entries:
     urls:
     - k8s-pvc-usage-0.1.0.tgz
     version: 0.1.0
-generated: "2023-08-18T11:47:01.400115303-04:00"
+generated: "2023-08-18T11:53:06.985273116-04:00"
