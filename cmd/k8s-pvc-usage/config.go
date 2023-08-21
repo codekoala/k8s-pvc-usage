@@ -16,5 +16,5 @@ var (
 	ApiTimeout  = typenv.Duration("API_REQUEST_TIMEOUT", 5*time.Second)
 
 	AnnotationsPath   = typenv.String("POD_ANNOTATION_PATH", "/etc/podinfo/annotations")
-	AnnotationsPrefix = typenv.String("POD_ANNOTATION_PREFIX", "k8s-pvc-usage")
+	AnnotationsPrefix = typenv.String("POD_ANNOTATION_PREFIX", "k8s-pvc-usage/")
 )
