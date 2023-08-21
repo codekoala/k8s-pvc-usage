@@ -77,7 +77,7 @@ func scrapeUsage(ctx context.Context, api *pvcusage.Client) {
 
 		for _, pvc := range pvcusage.GetPvcUsageCtx(ctx, api) {
 			labels := append([]string{pvc.Name, pvc.Namespace}, customLabelValues...)
-			pvcAvail.WithLabelValues(labels...).Set(pvc.Usage())
+			pvcAvail.WithLabelValues(labels...).Set(pvc.Avail())
 			pvcAvailMB.WithLabelValues(labels...).Set(pvc.AvailableBytes / 1048576)
 			pvcUsage.WithLabelValues(labels...).Set(pvc.Usage())
 			pvcUsageMB.WithLabelValues(labels...).Set(pvc.UsedBytes / 1048576)

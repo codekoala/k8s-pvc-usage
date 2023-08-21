@@ -127,6 +127,10 @@ func GetNodePvcUsageCtx(ctx context.Context, api *Client, node Node) (stats []Pv
 	return stats
 }
 
+func (pvc PvcStats) Avail() float64 {
+	return 100.0 - pvc.Usage()
+}
+
 func (pvc PvcStats) Usage() float64 {
 	if pvc.CapacityBytes <= 0 {
 		return 0
