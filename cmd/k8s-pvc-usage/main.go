@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"diegomarangoni.dev/typenv"
 	pvcusage "github.com/codekoala/k8s-pvc-usage"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -17,20 +16,6 @@ import (
 )
 
 var (
-	BindAddr       = typenv.String("BIND_ADDR", ":9100")
-	ScrapeInterval = typenv.Duration("SCRAPE_INTERVAL", 15*time.Second)
-
-	SecretsPath = typenv.String("KUBERNETES_SECRETS_PATH", "/var/run/secrets/kubernetes.io/serviceaccount")
-	ApiHost     = typenv.String("KUBERNETES_SERVICE_HOST", "kubernetes.default")
-	ApiPort     = typenv.String("KUBERNETES_PORT_443_TCP_PORT", "443")
-	ApiTimeout  = typenv.Duration("API_REQUEST_TIMEOUT", 5*time.Second)
-
-	pvcUsage = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Namespace: "k8s_pvc",
-		Name:      "usage",
-		Help:      "Percentage of PVC used",
-	}, []string{"name", "namespace"})
-
 	version = "0.0.0"
 	branch  = ""
 	commit  = ""
@@ -88,7 +73,11 @@ func scrapeUsage(ctx context.Context, api *pvcusage.Client) {
 		counter = 0
 
 		for _, pvc := range pvcusage.GetPvcUsageCtx(ctx, api) {
-			pvcUsage.WithLabelValues(pvc.Name, pvc.Namespace).Set(pvc.Usage())
+			labels := append([]string{pvc.Name, pvc.Namespace}, customLabelValues...)
+			pvcAvail.WithLabelValues(labels...).Set(pvc.Usage())
+			pvcAvailMB.WithLabelValues(labels...).Set(pvc.AvailableBytes / 1048576)
+			pvcUsage.WithLabelValues(labels...).Set(pvc.Usage())
+			pvcUsageMB.WithLabelValues(labels...).Set(pvc.UsedBytes / 1048576)
 			counter++
 		}
 

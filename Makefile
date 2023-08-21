@@ -1,5 +1,5 @@
 IMG := codekoala/k8s-pvc-usage
-VERSION := 0.1.1
+VERSION := 0.1.2
 PKG_PATH := ./charts/repo
 
 chart:
