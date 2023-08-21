@@ -23,6 +23,10 @@ var (
 func init() {
 	customLabelKeys, customLabelValues = readAnnotations()
 	labels = append(labels, customLabelKeys...)
+	log.Info().
+		Strs("custom_labels", customLabelKeys).
+		Strs("custom_label_values", customLabelValues).
+		Msg("using custom labels")
 
 	pvcAvail = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "k8s_pvc",
@@ -80,7 +84,7 @@ func readAnnotations() (keys, values []string) {
 		bits = strings.SplitN(line, "=", 2)
 
 		keys = append(keys, bits[0])
-		values = append(values, bits[1])
+		values = append(values, strings.Trim(bits[1], "\""))
 	}
 
 	return keys, values
