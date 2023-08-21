@@ -36,9 +36,9 @@ func main() {
 	}()
 
 	prometheus.MustRegister(pvcAvail)
-	prometheus.MustRegister(pvcAvailMB)
+	prometheus.MustRegister(pvcAvailBytes)
 	prometheus.MustRegister(pvcUsage)
-	prometheus.MustRegister(pvcUsageMB)
+	prometheus.MustRegister(pvcUsageBytes)
 
 	tokenPath := filepath.Join(SecretsPath, "token")
 	token, err := os.ReadFile(tokenPath)
@@ -78,9 +78,9 @@ func scrapeUsage(ctx context.Context, api *pvcusage.Client) {
 		for _, pvc := range pvcusage.GetPvcUsageCtx(ctx, api) {
 			labels := append([]string{pvc.Name, pvc.Namespace}, customLabelValues...)
 			pvcAvail.WithLabelValues(labels...).Set(pvc.Avail())
-			pvcAvailMB.WithLabelValues(labels...).Set(pvc.AvailableBytes / 1048576)
+			pvcAvailBytes.WithLabelValues(labels...).Set(pvc.AvailableBytes)
 			pvcUsage.WithLabelValues(labels...).Set(pvc.Usage())
-			pvcUsageMB.WithLabelValues(labels...).Set(pvc.UsedBytes / 1048576)
+			pvcUsageBytes.WithLabelValues(labels...).Set(pvc.UsedBytes)
 			counter++
 		}
 

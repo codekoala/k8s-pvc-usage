@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	labels     = []string{"name", "namespace"}
-	pvcAvail   *prometheus.GaugeVec
-	pvcAvailMB *prometheus.GaugeVec
-	pvcUsage   *prometheus.GaugeVec
-	pvcUsageMB *prometheus.GaugeVec
+	labels        = []string{"name", "namespace"}
+	pvcAvail      *prometheus.GaugeVec
+	pvcAvailBytes *prometheus.GaugeVec
+	pvcUsage      *prometheus.GaugeVec
+	pvcUsageBytes *prometheus.GaugeVec
 
 	customLabelKeys   []string
 	customLabelValues []string
@@ -30,26 +30,26 @@ func init() {
 
 	pvcAvail = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "k8s_pvc",
-		Name:      "avail",
+		Name:      "avail_percent",
 		Help:      "Percentage of PVC available",
 	}, labels)
 
-	pvcAvailMB = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	pvcAvailBytes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "k8s_pvc",
-		Name:      "avail_mb",
-		Help:      "Amount of PVC available, in MB",
+		Name:      "avail_bytes",
+		Help:      "Amount of PVC available in bytes",
 	}, labels)
 
 	pvcUsage = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "k8s_pvc",
-		Name:      "usage",
+		Name:      "usage_percent",
 		Help:      "Percentage of PVC used",
 	}, labels)
 
-	pvcUsageMB = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	pvcUsageBytes = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 		Namespace: "k8s_pvc",
-		Name:      "usage_mb",
-		Help:      "Amount of PVC used, in MB",
+		Name:      "usage_bytes",
+		Help:      "Amount of PVC used in bytes",
 	}, labels)
 }
 
