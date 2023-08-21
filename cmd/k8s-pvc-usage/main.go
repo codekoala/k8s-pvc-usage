@@ -35,7 +35,10 @@ func main() {
 		<-sig
 	}()
 
+	prometheus.MustRegister(pvcAvail)
+	prometheus.MustRegister(pvcAvailMB)
 	prometheus.MustRegister(pvcUsage)
+	prometheus.MustRegister(pvcUsageMB)
 
 	tokenPath := filepath.Join(SecretsPath, "token")
 	token, err := os.ReadFile(tokenPath)
