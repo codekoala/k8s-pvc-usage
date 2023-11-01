@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/bep/debounce"
 	pvcusage "github.com/codekoala/k8s-pvc-usage"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -80,29 +81,33 @@ func scrapeUsage(ctx context.Context, api *pvcusage.Client, mut *sync.Mutex, ref
 	ticker := time.NewTicker(ScrapeInterval)
 	defer ticker.Stop()
 
-	for {
-		// use anonymous function to take advantage of defer
-		func() {
-			// acquire lock on metrics
-			mut.Lock()
+	debounced := debounce.New(DebounceDelay)
 
-			// release lock on metrics when we're done here
-			defer mut.Unlock()
+	scrape := func() {
+		// acquire lock on metrics
+		mut.Lock()
 
-			log.Debug().Msg("scraping stats")
-			counter = 0
+		// release lock on metrics when we're done here
+		defer mut.Unlock()
 
-			for _, pvc := range pvcusage.GetPvcUsageCtx(ctx, api) {
-				labels := append([]string{pvc.Name, pvc.Namespace}, customLabelValues...)
-				pvcAvail.WithLabelValues(labels...).Set(pvc.Avail())
-				pvcAvailBytes.WithLabelValues(labels...).Set(pvc.AvailableBytes)
-				pvcUsage.WithLabelValues(labels...).Set(pvc.Usage())
-				pvcUsageBytes.WithLabelValues(labels...).Set(pvc.UsedBytes)
-				counter++
-			}
-		}()
+		log.Debug().Msg("scraping stats")
+		counter = 0
+
+		for _, pvc := range pvcusage.GetPvcUsageCtx(ctx, api) {
+			labels := append([]string{pvc.Name, pvc.Namespace}, customLabelValues...)
+			pvcAvail.WithLabelValues(labels...).Set(pvc.Avail())
+			pvcAvailBytes.WithLabelValues(labels...).Set(pvc.AvailableBytes)
+			pvcUsage.WithLabelValues(labels...).Set(pvc.Usage())
+			pvcUsageBytes.WithLabelValues(labels...).Set(pvc.UsedBytes)
+			counter++
+		}
 
 		log.Info().Uint("count", counter).Msg("scraped metrics for PVCs")
+	}
+
+	for {
+		debounced(scrape)
+
 		select {
 		case <-ctx.Done():
 			log.Info().Msg("exiting scrape loop")
