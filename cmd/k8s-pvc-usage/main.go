@@ -58,8 +58,13 @@ func main() {
 
 	log.Info().Msg("client configured")
 
-	mut := new(sync.Mutex) // avoid resetting metrics in the middle of scraping
+	// avoid resetting metrics in the middle of scraping
+	mut := new(sync.Mutex)
+
+	// refresh can be used to force a refresh of the metrics after a reset
 	refresh := make(chan bool, 1)
+	defer close(refresh)
+
 	go scrapeUsage(ctx, api, mut, refresh)
 	go resetUsage(ctx, api, mut, refresh)
 
