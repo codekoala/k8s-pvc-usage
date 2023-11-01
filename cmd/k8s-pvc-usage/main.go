@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"sync"
 	"time"
 
 	pvcusage "github.com/codekoala/k8s-pvc-usage"
@@ -57,7 +58,10 @@ func main() {
 
 	log.Info().Msg("client configured")
 
-	go scrapeUsage(ctx, api)
+	mut := new(sync.Mutex) // avoid resetting metrics in the middle of scraping
+	refresh := make(chan bool, 1)
+	go scrapeUsage(ctx, api, mut, refresh)
+	go resetUsage(ctx, api, mut, refresh)
 
 	http.Handle("/metrics", promhttp.Handler())
 	if err := http.ListenAndServe(BindAddr, nil); err != nil {
@@ -65,24 +69,33 @@ func main() {
 	}
 }
 
-func scrapeUsage(ctx context.Context, api *pvcusage.Client) {
+func scrapeUsage(ctx context.Context, api *pvcusage.Client, mut *sync.Mutex, refresh chan bool) {
 	var counter uint
 
 	ticker := time.NewTicker(ScrapeInterval)
 	defer ticker.Stop()
 
 	for {
-		log.Debug().Msg("scraping stats")
-		counter = 0
+		// use anonymous function to take advantage of defer
+		func() {
+			// acquire lock on metrics
+			mut.Lock()
 
-		for _, pvc := range pvcusage.GetPvcUsageCtx(ctx, api) {
-			labels := append([]string{pvc.Name, pvc.Namespace}, customLabelValues...)
-			pvcAvail.WithLabelValues(labels...).Set(pvc.Avail())
-			pvcAvailBytes.WithLabelValues(labels...).Set(pvc.AvailableBytes)
-			pvcUsage.WithLabelValues(labels...).Set(pvc.Usage())
-			pvcUsageBytes.WithLabelValues(labels...).Set(pvc.UsedBytes)
-			counter++
-		}
+			// release lock on metrics when we're done here
+			defer mut.Unlock()
+
+			log.Debug().Msg("scraping stats")
+			counter = 0
+
+			for _, pvc := range pvcusage.GetPvcUsageCtx(ctx, api) {
+				labels := append([]string{pvc.Name, pvc.Namespace}, customLabelValues...)
+				pvcAvail.WithLabelValues(labels...).Set(pvc.Avail())
+				pvcAvailBytes.WithLabelValues(labels...).Set(pvc.AvailableBytes)
+				pvcUsage.WithLabelValues(labels...).Set(pvc.Usage())
+				pvcUsageBytes.WithLabelValues(labels...).Set(pvc.UsedBytes)
+				counter++
+			}
+		}()
 
 		log.Info().Uint("count", counter).Msg("scraped metrics for PVCs")
 		select {
@@ -91,6 +104,41 @@ func scrapeUsage(ctx context.Context, api *pvcusage.Client) {
 			return
 		case <-ticker.C:
 			continue
+		case <-refresh:
+			log.Info().Msg("refresh requested")
+			ticker.Reset(ScrapeInterval)
+			continue
+		}
+	}
+}
+
+// resetUsage periodically resets all metrics to avoid returning stale information about, for example, PVCs that have been deleted
+func resetUsage(ctx context.Context, api *pvcusage.Client, mut *sync.Mutex, refresh chan bool) {
+	ticker := time.NewTicker(ResetInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			log.Info().Msg("exiting reset loop")
+			return
+		case <-ticker.C:
+			func() {
+				// acquire lock on metrics
+				mut.Lock()
+
+				// release lock on metrics when we're done here
+				defer mut.Unlock()
+
+				log.Info().Msg("resetting stats")
+				pvcAvail.Reset()
+				pvcAvailBytes.Reset()
+				pvcUsage.Reset()
+				pvcUsageBytes.Reset()
+			}()
+
+			// immediately scrape usage to avoid missing data
+			refresh <- true
 		}
 	}
 }

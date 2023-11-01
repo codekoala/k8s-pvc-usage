@@ -9,6 +9,7 @@ import (
 var (
 	BindAddr       = typenv.String("BIND_ADDR", ":9100")
 	ScrapeInterval = typenv.Duration("SCRAPE_INTERVAL", 15*time.Second)
+	ResetInterval  = typenv.Duration("RESET_INTERVAL", 1*time.Minute)
 
 	SecretsPath = typenv.String("KUBERNETES_SECRETS_PATH", "/var/run/secrets/kubernetes.io/serviceaccount")
 	ApiHost     = typenv.String("KUBERNETES_SERVICE_HOST", "kubernetes.default")
